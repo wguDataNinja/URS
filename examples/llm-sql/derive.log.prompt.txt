@@ -1,0 +1,51 @@
+Produce a derivation log for the URS you just generated.
+
+You are not being asked to explain the system.
+You are being asked to report how you performed the derivation.
+
+Scope
+	•	Limit yourself strictly to the work you just performed.
+	•	Do not restate URS content.
+	•	Do not justify design choices.
+	•	Do not add new findings.
+
+Output requirements
+
+Produce a structured log covering:
+
+1. Artifact traversal
+	•	Which categories of artifacts you inspected (code, tests, docs, data, config).
+	•	The order in which you inspected them.
+	•	Any artifacts you intentionally skipped and why.
+
+2. Evidence selection
+	•	How you decided something was “enforced” vs “documented intent”.
+	•	How you handled conflicting signals between code and docs.
+	•	How you handled tests as evidence of behavior.
+
+3. Unknowns and absences
+	•	How you determined something was unknown rather than omitted.
+	•	Any cases where you suspected behavior but did not record it due to lack of evidence.
+
+4. Reconciliation process
+	•	How you matched documentation claims to artifacts.
+	•	How you identified stale or contradictory documentation.
+	•	Rules you followed when resolving conflicts.
+
+5. Guardrails followed
+	•	How you avoided inventing guarantees.
+	•	How you avoided extrapolating future behavior.
+	•	How you ensured scope was limited to the specified module.
+
+6. Self-checks
+	•	Any internal checks you performed to ensure completeness.
+	•	Any sections that required revisiting due to initial ambiguity.
+
+Tone and format
+	•	Neutral, factual, first-person (“I inspected…”, “I marked as unknown…”).
+	•	No marketing language.
+	•	No conclusions about quality.
+	•	Bullet points preferred.
+	•	This log will be saved verbatim as an artifact.
+
+Begin the derivation log now.

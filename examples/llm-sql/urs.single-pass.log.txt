@@ -1,0 +1,33 @@
+Process log (concise, no URS restatement)
+
+Inspection order (artifact-first): repo listing → file inventory → core code → supporting code → demos → tests → configs → docs.
+Artifact-first files/dirs inspected:
+Listing: ls in repo root.
+Inventory: rg --files llm-sql.
+Core code: cli.py, query_translate_stub.py, llm_query_translate.py, query_contract.py, sql_selector.py, storage.py, query_session.py, session_store.py, template_catalog.py, time_window.py.
+Demo artifacts: demo_llm_sql.py, demo_run.md.
+Tests: test_query_session.py, test_cli_args.py (and test file inventory via rg --files -g '*test*' llm-sql).
+Config/deps: requirements.txt.
+Docs reconciliation files inspected (after skeleton):
+CONTRACT.md
+RUN.md
+DESIGN_DECISIONS.md
+PHASE_PLAN.md
+URS.md
+demo_run.md (used as artifact evidence, not authoritative)
+Artifact-first vs docs pass application:
+Built the skeleton strictly from code/tests/config/demo outputs. Entrypoints, IO, state, constraints, and gaps were derived from inspected files only.
+Only after skeleton completion, read docs and recorded claims; reconciled doc claims against artifacts in the reconcile section.
+Guardrails used:
+Treated code as source of truth; docs were not allowed to override artifact-derived behavior.
+Avoided asserting DB schema/row counts as authoritative unless backed by code or explicit artifacts; marked those as unknown if only in docs.
+Avoided assuming tests pass; noted presence only.
+Did not use or invent data outside llm-sql subtree.
+Unknowns/gaps/ambiguities handling:
+Flagged missing authoritative schema in gaps.
+Marked absolute default DB path portability as ambiguous.
+Marked doc claims about test status and dataset size as unknown when not verified by inspection.
+Template conformance checks:
+Ensured every required section from URS-template.md was populated.
+Preserved ordering and field names exactly as the template dictates.
+Used explicit [] for empty required lists and filled TBD only where artifacts didn’t support a value.

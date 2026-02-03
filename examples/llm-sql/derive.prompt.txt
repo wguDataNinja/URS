@@ -1,0 +1,134 @@
+# UNIVERSAL REPOSITORY SPECIFICATION (URS) — DERIVATION PROMPT
+
+You are **deriving** a Universal Repository Specification (URS) for this repository.
+
+The URS is a **lens-complete, exhaustive-by-construction reconstruction** of how the repository actually behaves, based strictly on evidence.
+
+This is **not** a summary, **not** a README rewrite, and **not** a design document.
+
+You are performing an **adversarial, artifact-first derivation**.
+
+The output of this prompt is a **raw URS** intended to establish factual authority.  
+It is expected to be mechanical, verbose, and uncomfortable to read.
+
+---
+
+## Epistemic Posture (Required)
+
+Treat the repository as a **hostile witness**.
+
+- Assume filenames, directory structure, comments, and documentation may be misleading.
+- Trust only what can be established from concrete artifacts.
+- Absence of evidence must be recorded as absence — never filled by inference.
+
+Your job is not to explain or improve the system.  
+Your job is to **reconstruct what can be proven**.
+
+---
+
+## Core Rules (Non-Negotiable)
+
+### 1. Artifacts First, Names Last
+You must derive behavior from artifacts such as:
+- source code
+- schemas
+- configuration
+- tests
+- data files
+- manifests
+- execution paths
+
+Do **not** trust:
+- filenames
+- directory names
+- comments
+- README claims
+- intended design descriptions
+
+Infer behavior only from what actually runs and what mutates state.
+
+---
+
+### 2. Exhaust All Required Lenses
+Every required section of the URS scaffold must be addressed.
+
+- Empty lists are allowed only if explicitly justified.
+- “Unknown” and “Not applicable” are valid outcomes.
+- Skipping a section is invalid.
+
+Completeness is more important than elegance.
+
+---
+
+### 3. Do Not Invent
+You must **not**:
+- assume enforcement without validators or guards,
+- infer guarantees without evidence,
+- project future behavior,
+- describe “likely” or “intended” behavior as fact.
+
+If something is only claimed in documentation, record it as *documented intent*, not enforced behavior.
+
+---
+
+### 4. Evidence Is Mandatory
+Wherever possible:
+- cite evidence using file paths, module names, function names, or tests.
+- if evidence is indirect or weak, state that explicitly.
+
+If no evidence exists, say so.
+
+---
+
+## Required Derivation Process
+
+You must follow this order:
+
+1. **Artifact-First Skeleton**
+   - Populate the full system skeleton using repository artifacts only.
+   - Do not read README files, design docs, or commentary during this step.
+   - Mark unknowns explicitly.
+
+2. **Documentation Inventory**
+   - Identify existing documentation and specifications.
+   - Record what they claim, without accepting those claims as truth.
+
+3. **Reconciliation**
+   - Compare documented intent against artifact-derived behavior.
+   - Explicitly record contradictions, mismatches, or gaps.
+   - Artifact evidence takes precedence unless clearly justified otherwise.
+
+4. **Raw Narrative Notes**
+   - Summarize findings mechanically.
+   - Avoid polish or storytelling.
+   - Preserve uncertainty and ambiguity.
+
+---
+
+## Output Requirements
+
+- Output **only** the URS in the provided YAML structure.
+- Populate sections in this order:
+  1. Artifact-first skeleton
+  2. Documentation inventory
+  3. Reconciliation
+  4. Raw narrative notes
+
+Do **not** add prose outside the structure.  
+Do **not** optimize for readability.
+
+This output is an **internal truth artifact**, not a presentation document.
+
+---
+
+## Validation Criteria
+
+Your output is invalid if:
+- any required section is missing,
+- undocumented assumptions are presented as facts,
+- documentation overrides artifact evidence without reconciliation,
+- uncertainty or absence is silently omitted.
+
+---
+
+Begin by inspecting repository artifacts and deriving the system skeleton.

@@ -1,0 +1,418 @@
+artifact_first_skeleton:
+scope:
+repository_subtree: "llm-sql/llm-db"
+focus: "natural-language query to fixed-template SQL over SQLite, plus session artifacts and CLI/demo tooling"
+evidence:
+- "llm-sql/llm-db/llm_db/cli.py"
+- "llm-sql/llm-db/llm_db/sql_selector.py"
+- "llm-sql/llm-db/llm_db/storage.py"
+artifacts_examined:
+code:
+- "llm-sql/llm-db/llm_db/cli.py"
+- "llm-sql/llm-db/llm_db/sql_selector.py"
+- "llm-sql/llm-db/llm_db/query_contract.py"
+- "llm-sql/llm-db/llm_db/llm_query_translate.py"
+- "llm-sql/llm-db/llm_db/llm_query_contract.py"
+- "llm-sql/llm-db/llm_db/query_translate_stub.py"
+- "llm-sql/llm-db/llm_db/query_session.py"
+- "llm-sql/llm-db/llm_db/session_store.py"
+- "llm-sql/llm-db/llm_db/template_catalog.py"
+- "llm-sql/llm-db/llm_db/time_window.py"
+- "llm-sql/llm-db/demo/demo_llm_sql.py"
+tests:
+- "llm-sql/llm-db/tests/test_query_session.py"
+- "llm-sql/llm-db/tests/test_session_store.py"
+- "llm-sql/llm-db/tests/test_query_smoke.py"
+- "llm-sql/llm-db/tests/test_llm_query_translate_unit.py"
+- "llm-sql/llm-db/tests/test_query_llm_gold.py"
+- "llm-sql/llm-db/tests/test_time_window.py"
+- "llm-sql/llm-db/tests/test_template_catalog.py"
+- "llm-sql/llm-db/tests/test_cli_args.py"
+- "llm-sql/llm-db/tests/test_posts_search.py"
+data_artifacts:
+- "llm-sql/llm-db/golds/data/wgu_reddit.sqlite"
+- "llm-sql/llm-db/golds/data/wgu_reddit.sqlite-wal"
+- "llm-sql/llm-db/golds/data/wgu_reddit.sqlite-shm"
+config_and_deps:
+- "llm-sql/llm-db/requirements.txt"
+entrypoints:
+cli:
+path: "llm-sql/llm-db/llm_db/cli.py"
+invocation: "python -m llm_db.cli <subcommand>"
+subcommands:
+- name: "query"
+behavior:
+- "parses NL query and translates to QueryPlan"
+- "compiles QueryPlan to fixed SQL template"
+- "executes SQL against SQLite in read-only mode"
+- "prints JSON meta then tab-delimited rows"
+- "writes a session JSON artifact under llm-sql/llm-db/sessions/<YYYY-MM-DD>/"
+evidence:
+- "llm-sql/llm-db/llm_db/cli.py: main()"
+- "llm-sql/llm-db/llm_db/query_session.py: build_session(), write_session()"
+- name: "sessions list|show|export-posts"
+behavior:
+- "lists session JSON files sorted by created_at_utc string"
+- "loads and prints session JSON"
+- "exports selected posts to jsonl or md using post_id list from session"
+evidence:
+- "llm-sql/llm-db/llm_db/cli.py: sessions command handlers"
+- "llm-sql/llm-db/llm_db/session_store.py"
+- name: "templates list|show"
+behavior:
+- "lists template IDs and descriptions"
+- "shows template metadata (description, allowed_params, returns)"
+evidence:
+- "llm-sql/llm-db/llm_db/cli.py"
+- "llm-sql/llm-db/llm_db/template_catalog.py"
+demo_script:
+path: "llm-sql/llm-db/demo/demo_llm_sql.py"
+invocation: "python demo/demo_llm_sql.py [args]"
+behavior:
+- "reads NL questions from demo/questions.txt"
+- "translates via LLM or stub"
+- "executes SQL and records preview"
+- "writes JSONL and human-readable markdown output"
+- "optionally writes session artifacts under ./sessions/"
+evidence:
+- "llm-sql/llm-db/demo/demo_llm_sql.py"
+core_data_flow:
+- step: "NL query input"
+evidence: "llm-sql/llm-db/llm_db/cli.py: query subcommand"
+- step: "Translation to QueryPlan"
+mechanisms:
+- "LLM path: translate_nl_to_plan_llm() -> translate_to_query_plan()"
+- "Stub path: translate_nl_to_plan() regex heuristics"
+evidence:
+- "llm-sql/llm-db/llm_db/llm_query_translate.py"
+- "llm-sql/llm-db/llm_db/query_translate_stub.py"
+- step: "Normalization/validation"
+mechanisms:
+- "normalize_query_plan_data() for LLM output"
+- "QueryPlan.validate() enforces dataset_slug == 'posts'"
+- "QuerySpec.validate() enforces allowed params and limit range"
+evidence:
+- "llm-sql/llm-db/llm_db/llm_query_contract.py"
+- "llm-sql/llm-db/llm_db/query_contract.py"
+- step: "Compile QueryPlan to SQL"
+mechanisms:
+- "TemplateID -> SQL template generator"
+- "SQL built with fixed SELECT ... FROM posts and optional WHERE clauses"
+evidence:
+- "llm-sql/llm-db/llm_db/sql_selector.py"
+- step: "Execute SQL (read-only)"
+mechanisms:
+- "SELECT-only enforcement"
+- "forbidden keyword checks"
+- "SQLite read-only connection (mode=ro)"
+- "max_rows enforced in client loop"
+evidence:
+- "llm-sql/llm-db/llm_db/storage.py"
+- step: "Session artifact creation"
+mechanisms:
+- "extract_post_ids from result columns"
+- "write JSON with selection.ids"
+evidence:
+- "llm-sql/llm-db/llm_db/query_session.py"
+data_sources_and_storage:
+sqlite_db:
+default_path:
+- "llm-sql/llm-db/llm_db/cli.py: WGU_REDDIT_DB env or /Users/buddy/Desktop/WGU-Reddit/db/WGU-Reddit.db"
+- "llm-sql/llm-db/demo/demo_llm_sql.py: default db path"
+test_db_path:
+- "llm-sql/llm-db/tests/test_query_smoke.py: llm-sql/llm-db/golds/data/wgu_reddit.sqlite"
+sessions:
+format: "JSON files with QuerySession fields"
+location:
+- "cli: llm-sql/llm-db/sessions/<YYYY-MM-DD>/<session_id>.json"
+- "demo: ./sessions/<YYYY-MM-DD>/<session_id>.json"
+evidence:
+- "llm-sql/llm-db/llm_db/query_session.py"
+- "llm-sql/llm-db/llm_db/cli.py"
+- "llm-sql/llm-db/demo/demo_llm_sql.py"
+optional_llm_traces:
+path: "REDDIT_QUERY_LLM_TRACE_DIR/query_<tag>.<ts>.json"
+evidence: "llm-sql/llm-db/llm_db/llm_query_translate.py:_maybe_write_trace"
+schema_surface_observed:
+tables_referenced:
+- "posts"
+columns_referenced:
+- "post_id"
+- "title"
+- "score"
+- "num_comments"
+- "created_utc"
+- "permalink"
+- "course_code"
+- "post_type"
+- "selftext"
+- "is_removed"
+- "is_deleted"
+evidence:
+- "llm-sql/llm-db/llm_db/sql_selector.py"
+- "llm-sql/llm-db/llm_db/cli.py: export-posts SQL"
+enforced_constraints:
+dataset_slug:
+rule: "must equal 'posts'"
+enforcement: "QueryPlan.validate() raises if not"
+evidence: "llm-sql/llm-db/llm_db/query_contract.py"
+template_id:
+rule: "must be in TemplateID enum"
+enforcement:
+- "TemplateID enum restricts values"
+- "normalize_query_plan_data() falls back to posts_filtered"
+evidence:
+- "llm-sql/llm-db/llm_db/query_contract.py"
+- "llm-sql/llm-db/llm_db/llm_query_contract.py"
+params_allowlist:
+rule: "params restricted by TEMPLATE_ALLOWED_PARAMS per template"
+enforcement:
+- "QuerySpec.validate() rejects unknown params"
+- "normalize_query_plan_data() drops non-allowed keys"
+evidence:
+- "llm-sql/llm-db/llm_db/query_contract.py"
+- "llm-sql/llm-db/llm_db/llm_query_contract.py"
+limits:
+rule: "limit required >=1 and <= HARD_MAX_LIMIT (200)"
+enforcement:
+- "enforce_limit() and QuerySpec.validate()"
+- "compile_query() bounds max_rows by HARD_MAX_LIMIT"
+evidence:
+- "llm-sql/llm-db/llm_db/query_contract.py"
+- "llm-sql/llm-db/llm_db/sql_selector.py"
+read_only_execution:
+rule: "SQL must be single SELECT; no forbidden keywords"
+enforcement:
+- "execute_readonly() checks"
+- "sqlite uri mode=ro"
+evidence: "llm-sql/llm-db/llm_db/storage.py"
+translation_mechanisms:
+llm_path:
+providers:
+- "ollama (local) via ollama.chat"
+- "openai (remote) via openai.OpenAI()"
+selection:
+- "model name starting with 'gpt' selects OpenAI provider"
+- "otherwise uses ollama"
+json_parsing:
+- "extracts JSON object from LLM output; ignores surrounding text"
+- "one retry with repair prompt"
+evidence:
+- "llm-sql/llm-db/llm_db/llm_query_translate.py"
+stub_path:
+behavior:
+- "regex-based heuristics for template selection"
+- "course code detection: /\b([cd]\d{3})\b/"
+- "default limit 20 for list/search templates"
+evidence:
+- "llm-sql/llm-db/llm_db/query_translate_stub.py"
+time_window_handling:
+mechanisms:
+- "--day: converts to min/max UTC bounds"
+- "--days: computes window from now minus N days"
+- "--since/--until: date bounds"
+integration:
+- "stub translator path injects min/max into params if allowed"
+- "llm path appends [SYSTEM: min_created_utc=..., max_created_utc=...] to NL when using --days/--since/--until"
+- "llm path adds day bounds only when --day is provided (uses _data_to_query_plan)"
+evidence:
+- "llm-sql/llm-db/llm_db/time_window.py"
+- "llm-sql/llm-db/llm_db/cli.py"
+- "llm-sql/llm-db/llm_db/llm_query_translate.py:_data_to_query_plan"
+outputs:
+cli_output:
+- "JSON meta summary printed to stdout"
+- "tab-delimited rows printed after meta"
+evidence: "llm-sql/llm-db/llm_db/cli.py"
+session_files:
+- "JSON with session_id, created_at_utc, db_path, translator, model, nl_query, plan, execution, selection"
+evidence: "llm-sql/llm-db/llm_db/query_session.py"
+exports:
+- "jsonl: optional leading _meta when truncated; each row as JSON"
+- "md: per-post sections with fields and selftext"
+evidence: "llm-sql/llm-db/llm_db/cli.py"
+tests_as_behavioral_evidence:
+normalization_rules:
+evidence: "llm-sql/llm-db/tests/test_llm_query_translate_unit.py"
+notes:
+- "unknown template_id falls back to posts_filtered"
+- "params not in allowlist are dropped"
+- "posts_metadata params are removed"
+- "default limit applied only to templates that allow limit"
+sql_compilation_search:
+evidence: "llm-sql/llm-db/tests/test_posts_search.py"
+notes:
+- "posts_search uses two LIKE params with %query%"
+time_window:
+evidence: "llm-sql/llm-db/tests/test_time_window.py"
+cli_argument_validation:
+evidence: "llm-sql/llm-db/tests/test_cli_args.py"
+llm_gold_tests:
+evidence: "llm-sql/llm-db/tests/test_query_llm_gold.py"
+notes:
+- "tests are gated by QUERY_LLM_TESTS=1 and presence of ollama+llama3"
+- "asserts template selection for given NL prompts"
+external_dependencies_and_env:
+runtime_deps:
+- "ollama (python package)"
+- "openai (python package)"
+evidence: "llm-sql/llm-db/requirements.txt"
+env_vars_observed:
+- "WGU_REDDIT_DB (CLI default DB override)"
+- "OPENAI_API_KEY (OpenAI provider)"
+- "REDDIT_QUERY_LLM_DEBUG (stderr raw LLM output)"
+- "REDDIT_QUERY_LLM_TRACE_DIR / REDDIT_QUERY_LLM_TRACE_TAG (trace file emission)"
+- "QUERY_LLM_TESTS, LLM_MODEL (tests)"
+evidence:
+- "llm-sql/llm-db/llm_db/cli.py"
+- "llm-sql/llm-db/llm_db/llm_query_translate.py"
+- "llm-sql/llm-db/tests/test_query_llm_gold.py"
+unknowns_and_absences:
+- "No schema migration or DDL found in llm-sql/llm-db"
+- "No packaging metadata specific to llm-sql/llm-db beyond requirements.txt"
+- "No explicit README within llm-sql subtree"
+- "No evidence of comment-table queries in llm-sql/llm-db"
+- "No evidence of background jobs or daemons in llm-sql/llm-db"
+
+documentation_inventory:
+documents:
+- path: "llm-sql/URS.md"
+type: "URS/spec"
+claims_high_level:
+- "system is deterministic, template-based, read-only"
+- "single dataset with posts table; specific core fields listed"
+- "LLM emits JSON intent only; LLM output untrusted"
+- "normalization drops unknown fields and enforces limits"
+- "SQL templates only; bound params; read-only SQLite"
+- "one LLM retry"
+- "session artifacts stored under llm-db/sessions/YYYY-MM-DD/"
+- "CLI supports sessions and templates commands"
+- "time window flags supported and injected"
+- "demo outputs show queries and results"
+- "tests define truth; LLM gold tests gated"
+- "dependencies: ollama, openai"
+- "status claims: tests passing, verified model, dataset counts"
+- path: "llm-sql/DESIGN_DECISIONS.md"
+type: "design decisions"
+claims_high_level:
+- "QuerySession is central durable artifact with specific fields"
+- "compiled SQL explicitly excluded from QuerySession (for now)"
+- "separation of exploration and synthesis"
+- "posts primary unit; comments derived via ThreadBundle (not in llm-sql)"
+- "Datasette as read-only viewer sidecar"
+- "visualization constrained and reproducible"
+- "non-goals: free-form SQL, dashboards, agents"
+- path: "llm-sql/PHASE_PLAN.md"
+type: "phase plan"
+claims_high_level:
+- "integration layers (acquisition, exploration, inspection, analysis, narrative)"
+- "some llm-sql components listed as not implemented (QuerySession writer/store)"
+- "open decisions on DB defaults and comment acquisition"
+- path: "llm-sql/llm-db/docs/CONTRACT.md"
+type: "contract"
+claims_high_level:
+- "natural-language read-only query interface"
+- "not a general SQL client; no ad-hoc joins"
+- "allowed question types (templates)"
+- "guarantees: read-only, bounded, validated; LLM has no authority"
+- "claims not artifact-producing yet"
+- path: "llm-sql/llm-db/docs/RUN.md"
+type: "run recipe"
+claims_high_level:
+- "setup via venv, pip install -r requirements.txt"
+- "run CLI query with PYTHONPATH=. python -m llm_db.cli query ..."
+- "env vars WGU_REDDIT_DB and OPENAI_API_KEY"
+- "ollama llama3 required for LLM path"
+- path: "llm-sql/llm-db/demo/demo_run.md"
+type: "demo output"
+claims_high_level:
+- "example queries, SQL, params, row previews, session paths, timings"
+- "dataset counts observed at run time (not guaranteed by code)"
+
+reconciliation:
+matches_between_docs_and_artifacts:
+- doc: "llm-sql/llm-db/docs/CONTRACT.md"
+claim: "read-only execution and bounded results"
+artifact_evidence:
+- "llm-sql/llm-db/llm_db/storage.py (SELECT-only, mode=ro)"
+- "llm-sql/llm-db/llm_db/query_contract.py (HARD_MAX_LIMIT)"
+- "llm-sql/llm-db/llm_db/sql_selector.py (LIMIT applied)"
+- doc: "llm-sql/URS.md"
+claim: "Template-only SQL with bound params"
+artifact_evidence:
+- "llm-sql/llm-db/llm_db/sql_selector.py"
+- "llm-sql/llm-db/llm_db/storage.py"
+- doc: "llm-sql/URS.md"
+claim: "One LLM retry"
+artifact_evidence:
+- "llm-sql/llm-db/llm_db/llm_query_translate.py (single retry path)"
+- doc: "llm-sql/URS.md"
+claim: "Session artifacts written under sessions/YYYY-MM-DD/"
+artifact_evidence:
+- "llm-sql/llm-db/llm_db/query_session.py"
+- "llm-sql/llm-db/llm_db/cli.py"
+contradictions_or_mismatches:
+- doc: "llm-sql/DESIGN_DECISIONS.md"
+claim: "QuerySession explicitly excludes compiled SQL (for now)"
+artifact_evidence:
+- "llm-sql/llm-db/llm_db/cli.py (execution includes sql + sql_params)"
+- "llm-sql/llm-db/llm_db/query_session.py (execution stored in session)"
+note: "Design decision conflicts with actual session payload content."
+- doc: "llm-sql/PHASE_PLAN.md"
+claim: "QuerySession writer/store not implemented"
+artifact_evidence:
+- "llm-sql/llm-db/llm_db/query_session.py (write_session implemented)"
+- "llm-sql/llm-db/llm_db/session_store.py (list/load/resolve implemented)"
+note: "Phase plan is stale relative to code."
+- doc: "llm-sql/llm-db/docs/CONTRACT.md"
+claim: "not artifact-producing (yet)"
+artifact_evidence:
+- "llm-sql/llm-db/llm_db/query_session.py (session artifacts produced)"
+- "llm-sql/llm-db/llm_db/cli.py (writes sessions by default)"
+note: "Contract claim contradicts code behavior."
+gaps_or_unverified_doc_claims:
+- doc: "llm-sql/URS.md"
+claim: "dataset row counts and core fields list"
+artifact_evidence:
+- "No schema enforcement in code; counts appear only in demo outputs"
+status: "documented intent / observed in demo, not enforced"
+- doc: "llm-sql/URS.md"
+claim: "no network access from query execution"
+artifact_evidence:
+- "LLM path uses OpenAI API (network) and Ollama client; query command integrates LLM translation before execution"
+status: "ambiguous; storage execution is offline but query path can use network"
+- doc: "llm-sql/URS.md"
+claim: "time window injection rules"
+artifact_evidence:
+- "LLM path only injects day bounds when --day is provided; --days/--since/--until are only appended to NL string"
+status: "partially implemented"
+- doc: "llm-sql/DESIGN_DECISIONS.md"
+claim: "Datasette integration"
+artifact_evidence:
+- "no datasette code in llm-sql/llm-db"
+status: "documented intent only"
+- doc: "llm-sql/DESIGN_DECISIONS.md"
+claim: "ThreadBundle/comments workflow"
+artifact_evidence:
+- "no comment fetch or thread bundle code in llm-sql/llm-db"
+status: "documented intent only"
+artifact_only_behaviors_not_claimed_in_docs:
+- behavior: "export-posts reorders output to match session selection.ids and can truncate"
+evidence: "llm-sql/llm-db/llm_db/cli.py"
+- behavior: "LLM output parsing extracts JSON object even with surrounding text"
+evidence: "llm-sql/llm-db/llm_db/llm_query_translate.py"
+- behavior: "normalize_query_plan_data drops is_removed/is_deleted when value is 0"
+evidence: "llm-sql/llm-db/llm_db/llm_query_contract.py"
+- behavior: "QuerySpec.validate mutates params dict (limit enforcement) despite frozen dataclass"
+evidence: "llm-sql/llm-db/llm_db/query_contract.py"
+
+raw_narrative_notes:
+
+"Core behavior is defined by a small Python package under llm-sql/llm-db/llm_db with a CLI and demo script."
+"All SQL is generated from fixed templates in sql_selector.py and always queries the posts table; only columns referenced in those templates are observable."
+"Read-only guarantees are implemented in storage.execute_readonly via SELECT-only checks and a SQLite read-only connection."
+"LLM translation is optional; stub translation is deterministic regex-based and used in tests and can be used in CLI via --translator stub."
+"Normalization and validation are the primary guardrails; unknown templates are coerced to posts_filtered and params are filtered by allowlists."
+"Session artifacts are always written by CLI query path; they include execution SQL and params in contrast to stated design exclusions."
+"Time window flags are partially enforced for LLM translation: --day adds bounds in code, while --days/--since/--until rely on NL hints to the LLM."
+"Documentation includes a detailed URS and design/phase plans; several claims are stale or aspirational relative to code."

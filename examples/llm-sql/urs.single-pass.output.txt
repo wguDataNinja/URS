@@ -1,0 +1,241 @@
+UNIVERSAL REPO SPECIFICATION (URS)
+purpose: definitive repo context for LLM-assisted work
+method: artifact-first skeleton, then docs reconciliation
+meta:
+spec_id: llm-sql-urs-2026-02-02
+repo_name: llm-sql
+repo_type: tool
+status: unknown
+generated_at: 2026-02-02
+generated_by: llm
+
+process:
+passes:
+artifact_first:
+completed: true
+evidence: ["ls", "rg --files llm-sql", "sed -n '1,200p' llm-sql/llm-db/llm_db/cli.py", "sed -n '1,200p' llm-sql/llm-db/llm_db/llm_query_translate.py", "sed -n '1,200p' llm-sql/llm-db/llm_db/query_contract.py", "sed -n '1,200p' llm-sql/llm-db/llm_db/sql_selector.py", "sed -n '1,200p' llm-sql/llm-db/llm_db/storage.py", "sed -n '1,200p' llm-sql/llm-db/llm_db/query_session.py", "sed -n '1,200p' llm-sql/llm-db/llm_db/session_store.py", "sed -n '1,200p' llm-sql/llm-db/llm_db/llm_query_contract.py", "sed -n '1,200p' llm-sql/llm-db/demo/demo_llm_sql.py", "sed -n '1,120p' llm-sql/llm-db/tests/test_query_session.py"]
+notes: "Inspected core CLI, LLM translation, contract/validation, SQL compiler, storage, session persistence, demo harness, and tests."
+docs_reconcile:
+completed: true
+evidence: ["llm-sql/URS.md", "llm-sql/DESIGN_DECISIONS.md", "llm-sql/PHASE_PLAN.md", "llm-sql/llm-db/docs/CONTRACT.md", "llm-sql/llm-db/docs/RUN.md", "llm-sql/llm-db/demo/demo_run.md"]
+notes: "Reconciled doc claims against code and demo artifacts."
+
+------------------------------------------------------------
+TIER 1: ARTIFACT-FIRST SKELETON (REQUIRED)
+Must be populated from code/config/tests/artifacts. Docs last.
+------------------------------------------------------------
+skeleton:
+system_kind: interactive
+components:
+- name: llm-db-cli
+role: CLI entrypoint for NL query, session ops, template inspection, and exports.
+entrypoints: ["python -m llm_db.cli", "llm_db/cli.py::main"]
+reads: ["WGU_REDDIT_DB env var", "SQLite DB file (default /Users/buddy/Desktop/WGU-Reddit/db/WGU-Reddit.db)", "stdin args (NL query, flags)"]
+writes: ["stdout (query meta + rows)", "sessions JSON (llm-sql/llm-db/sessions/YYYY-MM-DD/*.json)", "export files (jsonl/md)"]
+state: ["sessions/ (JSON session store)", "SQLite DB (read-only)"]
+ev: ["llm-sql/llm-db/llm_db/cli.py"]
+- name: llm-query-translation
+role: Convert NL query to QueryPlan using LLM or stub translator.
+entrypoints: ["llm_db.llm_query_translate.translate_nl_to_plan_llm", "llm_db.llm_query_translate.translate_to_query_plan", "llm_db.query_translate_stub.translate_nl_to_plan"]
+reads: ["NL query string", "Ollama model via ollama.chat", "OpenAI API via openai.OpenAI", "REDDIT_QUERY_LLM_TRACE_DIR env var", "REDDIT_QUERY_LLM_TRACE_TAG env var"]
+writes: ["optional trace JSON (REDDIT_QUERY_LLM_TRACE_DIR)"]
+state: ["trace directory (if enabled)"]
+ev: ["llm-sql/llm-db/llm_db/llm_query_translate.py", "llm-sql/llm-db/llm_db/query_translate_stub.py", "llm-sql/llm-db/llm_db/llm_query_contract.py"]
+- name: query-contract-and-validation
+role: Enforce template allowlist, params, limits, and dataset slug.
+entrypoints: ["llm_db.query_contract.QuerySpec.validate", "llm_db.query_contract.QueryPlan.validate", "llm_db.query_contract.enforce_limit"]
+reads: ["TemplateID enum + TEMPLATE_ALLOWED_PARAMS"]
+writes: []
+state: []
+ev: ["llm-sql/llm-db/llm_db/query_contract.py"]
+- name: sql-compiler
+role: Compile validated QuerySpec/Plan into parameterized SQL.
+entrypoints: ["llm_db.sql_selector.compile_query", "llm_db.sql_selector.compile_plan"]
+reads: ["QuerySpec/QueryPlan", "TemplateID"]
+writes: ["CompiledQuery (SQL + params + max_rows)"]
+state: []
+ev: ["llm-sql/llm-db/llm_db/sql_selector.py"]
+- name: readonly-execution
+role: Execute parameterized SELECTs against SQLite in read-only mode.
+entrypoints: ["llm_db.storage.execute_readonly"]
+reads: ["SQLite db_path", "SQL string", "params", "max_rows"]
+writes: ["query results (cols, rows)"]
+state: ["SQLite DB file (read-only)"]
+ev: ["llm-sql/llm-db/llm_db/storage.py"]
+- name: session-artifacts
+role: Build and persist QuerySession JSON artifacts; list/show/resolve sessions.
+entrypoints: ["llm_db.query_session.build_session", "llm_db.query_session.write_session", "llm_db.session_store.list_sessions", "llm_db.session_store.load_session", "llm_db.session_store.resolve_session"]
+reads: ["query results (cols, rows)", "session JSON files"]
+writes: ["sessions/YYYY-MM-DD/<uuid>.json"]
+state: ["sessions/ (JSON store)"]
+ev: ["llm-sql/llm-db/llm_db/query_session.py", "llm-sql/llm-db/llm_db/session_store.py"]
+- name: demo-harness
+role: Batch demo runner over questions, produces run logs and optional sessions.
+entrypoints: ["python llm-db/demo/demo_llm_sql.py"]
+reads: ["demo/questions.txt", "SQLite DB", "LLM provider/model"]
+writes: ["demo/demo_run.jsonl", "demo/demo_run.md", "sessions/ (if enabled)"]
+state: ["demo/ outputs", "sessions/"]
+ev: ["llm-sql/llm-db/demo/demo_llm_sql.py", "llm-sql/llm-db/demo/questions.txt"]
+
+entrypoints:
+primary: ["python -m llm_db.cli"]
+secondary: ["python llm-db/demo/demo_llm_sql.py"]
+scheduled: []
+
+io:
+inputs:
+- name: natural_language_query
+kind: user
+format: string
+source: CLI args (llm-db query)
+ev: ["llm-sql/llm-db/llm_db/cli.py"]
+- name: sqlite_posts_db
+kind: db
+format: sqlite
+source: WGU_REDDIT_DB env var or default path
+ev: ["llm-sql/llm-db/llm_db/cli.py"]
+- name: llm_provider
+kind: env
+format: string
+source: model/provider flags + OPENAI_API_KEY for GPT
+ev: ["llm-sql/llm-db/llm_db/llm_query_translate.py", "llm-sql/llm-db/llm_db/cli.py"]
+- name: demo_questions
+kind: file
+format: text
+source: demo/questions.txt
+ev: ["llm-sql/llm-db/demo/demo_llm_sql.py"]
+outputs:
+- name: query_stdout
+kind: log
+format: text/tsv
+location: stdout
+mutability: overwrite
+ev: ["llm-sql/llm-db/llm_db/cli.py"]
+- name: query_sessions
+kind: file
+format: json
+location: llm-sql/llm-db/sessions/YYYY-MM-DD/*.json
+mutability: append_only
+ev: ["llm-sql/llm-db/llm_db/query_session.py", "llm-sql/llm-db/llm_db/cli.py"]
+- name: exported_posts
+kind: file
+format: jsonl|md
+location: user-specified path
+mutability: overwrite
+ev: ["llm-sql/llm-db/llm_db/cli.py"]
+- name: demo_run_logs
+kind: artifact
+format: jsonl|md
+location: llm-sql/llm-db/demo/demo_run.jsonl, llm-sql/llm-db/demo/demo_run.md
+mutability: overwrite
+ev: ["llm-sql/llm-db/demo/demo_llm_sql.py"]
+- name: llm_trace
+kind: file
+format: json
+location: REDDIT_QUERY_LLM_TRACE_DIR
+mutability: append_only
+ev: ["llm-sql/llm-db/llm_db/llm_query_translate.py"]
+
+state:
+stores:
+- name: wgu_reddit_sqlite_db
+kind: sqlite
+location: /Users/buddy/Desktop/WGU-Reddit/db/WGU-Reddit.db (default)
+mutability: read_only
+schema_authority: []
+ev: ["llm-sql/llm-db/llm_db/cli.py", "llm-sql/llm-db/llm_db/storage.py"]
+- name: query_sessions_store
+kind: files
+location: llm-sql/llm-db/sessions/
+mutability: append_only
+schema_authority: ["llm-sql/llm-db/llm_db/query_session.py"]
+ev: ["llm-sql/llm-db/llm_db/query_session.py", "llm-sql/llm-db/llm_db/session_store.py"]
+
+artifacts:
+directories: ["llm-sql/llm-db/sessions", "llm-sql/llm-db/demo"]
+manifests: []
+ev: ["llm-sql/llm-db/demo/demo_run.jsonl", "llm-sql/llm-db/demo/demo_run.md"]
+
+constraints:
+enforced: ["Template allowlist + param validation", "Hard max limit enforcement", "Dataset slug must be 'posts'", "SQL must be single SELECT only", "Forbidden SQL keywords rejected", "SQLite connection opened in read-only mode"]
+conventions: ["LLM output should be strict JSON intent only", "Default limit applied when unspecified", "Sessions stored under sessions/YYYY-MM-DD"]
+unknown: ["Authoritative schema definition for posts table not present in subtree"]
+ev: ["llm-sql/llm-db/llm_db/query_contract.py", "llm-sql/llm-db/llm_db/sql_selector.py", "llm-sql/llm-db/llm_db/storage.py", "llm-sql/llm-db/llm_db/query_session.py"]
+
+tests_and_validation:
+tests_present: true
+validators: ["QuerySpec.validate", "QueryPlan.validate", "execute_readonly SQL guards", "normalize_query_plan_data"]
+ev: ["llm-sql/llm-db/tests/test_query_session.py", "llm-sql/llm-db/tests/test_cli_args.py", "llm-sql/llm-db/tests/test_time_window.py", "llm-sql/llm-db/llm_db/query_contract.py", "llm-sql/llm-db/llm_db/storage.py", "llm-sql/llm-db/llm_db/llm_query_contract.py"]
+
+gaps:
+missing_or_stubbed: ["No in-repo authoritative DB schema for posts table (relies on external DB)", "LLM translator stub is heuristic and not coverage-complete by design"]
+ambiguous: ["Default DB path hardcoded to a local absolute path; portability unclear"]
+ev: ["llm-sql/llm-db/llm_db/cli.py", "llm-sql/llm-db/llm_db/query_translate_stub.py"]
+
+------------------------------------------------------------
+TIER 2: DOC INVENTORY (REQUIRED, AFTER SKELETON)
+Enumerate which docs/specs exist and what they claim.
+------------------------------------------------------------
+docs:
+important_docs:
+- path: llm-sql/llm-db/docs/CONTRACT.md
+type: spec
+claims: ["llm-sql is read-only NL query interface over WGU-Reddit SQLite", "No free-form SQL or joins", "Templates limited to specific question types", "LLM output is untrusted"]
+- path: llm-sql/llm-db/docs/RUN.md
+type: runbook
+claims: ["Run CLI via python -m llm_db.cli query", "Optional WGU_REDDIT_DB env var", "Ollama required for llama3"]
+- path: llm-sql/DESIGN_DECISIONS.md
+type: adr
+claims: ["QuerySession is central artifact", "Strict separation of exploration vs synthesis", "Posts are primary selection unit", "Datasette is viewer sidecar"]
+- path: llm-sql/PHASE_PLAN.md
+type: plan
+claims: ["QuerySession persistence not yet implemented (Phase 1)", "Integration across wgu-reddit/llm-reddit-fetcher/RQRE planned", "Non-negotiable constraints for llm-sql"]
+- path: llm-sql/URS.md
+type: spec
+claims: ["Deterministic template-based NL query system", "Durable Session Artifact", "Hard non-goals (no writes, no free-form SQL)", "Dataset size and schema summary"]
+- path: llm-sql/llm-db/demo/demo_run.md
+type: notes
+claims: ["Example query outputs and row counts", "Session paths recorded for demo runs"]
+known_specs:
+- path: llm-sql/llm-db/docs/CONTRACT.md
+governs: query_contract
+- path: llm-sql/URS.md
+governs: overall system behavior
+missing_docs:
+- README.md (llm-sql subtree)
+
+------------------------------------------------------------
+TIER 3: RECONCILIATION + NARRATIVE (DOC-AWARE)
+This is where explanation expands, but must preserve skeleton truth.
+------------------------------------------------------------
+reconcile:
+contradictions:
+- doc_claim: "QuerySession explicitly excludes compiled SQL text (DESIGN_DECISIONS.md)."
+artifact_finding: "QuerySession execution payload includes compiled SQL and params."
+resolution: accept_artifact
+notes: "Code writes execution.sql and execution.sql_params in build_session/write_session."
+- doc_claim: "QuerySession persistence not yet implemented (PHASE_PLAN.md Phase 1)."
+artifact_finding: "QuerySession build/write and session_store are implemented and used by CLI and demo."
+resolution: accept_artifact
+notes: "Phase plan appears outdated relative to code."
+- doc_claim: "Status GREEN / tests passing (URS.md)."
+artifact_finding: "Tests exist but were not executed during inspection."
+resolution: unknown
+notes: "Presence of tests is confirmed; pass status not verified."
+- doc_claim: "Dataset size and schema summary (URS.md)."
+artifact_finding: "Demo run includes counts, but no authoritative schema or DB inspection in subtree."
+resolution: unknown
+notes: "Treat dataset metrics as illustrative unless DB is inspected."
+updates_after_docs: ["Confirmed QuerySession persistence and session ops are implemented in code despite plan doc claiming missing.", "Verified enforcement of read-only SQL via storage guards and sqlite read-only mode."]
+
+narrative:
+purpose_and_scope:
+statement: "llm-sql provides a deterministic, template-bound, read-only natural language query interface over a SQLite posts dataset, producing durable QuerySession artifacts for later inspection and handoff."
+non_goals: ["No arbitrary SQL", "No writes or schema changes", "No comment-level joins or analytics", "No synthesis or reporting outputs"]
+success_criteria: ["NL query returns bounded results", "QueryPlan validated against template contract", "QuerySession JSON saved with ordered post_ids", "Read-only execution enforced"]
+architecture_notes: ["Pipeline: NL query -> LLM or stub intent -> normalized/validated QuerySpec -> template SQL compile -> read-only SQLite execution -> session artifact.", "LLM output is treated as untrusted input; only allowlisted templates/params are executed.", "Sessions are stored by date under llm-sql/llm-db/sessions and can be listed/exported via CLI subcommands."]
+decisions_and_rationale: ["Template-only SQL and read-only execution reduce risk of LLM authority creep and data mutation.", "QuerySession artifacts preserve provenance and enable downstream selection workflows."]
+operating_model: ["Install deps from llm-sql/llm-db/requirements.txt, run CLI with python -m llm_db.cli query "...".", "Set WGU_REDDIT_DB to point at the SQLite file; default is an absolute local path.", "Use sessions subcommands to list/show/export post selections."]
+confidence:
+high: ["Core query validation/compilation/execution pipeline", "Session artifact creation and storage"]
+low: ["Exact SQLite schema and dataset size", "Docs that claim phase status or test pass state"]

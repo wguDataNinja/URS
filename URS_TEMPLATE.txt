@@ -1,0 +1,142 @@
+# UNIVERSAL REPO SPECIFICATION (URS)
+# purpose: definitive repository context for LLM-assisted work
+# method: artifact-first skeleton, followed by documentation reconciliation
+
+meta:
+  urs_version: "1.0"
+  spec_id: TBD
+  repo_name: TBD
+  repo_type: TBD            # pipeline|service|tool|library|mixed|unknown
+  status: TBD               # alpha|beta|stable|deprecated|unknown
+  generated_at: TBD         # YYYY-MM-DD
+  generated_by: TBD         # human|llm(model)|
+
+process:
+  passes:
+    artifact_first:
+      completed: false
+      evidence: []          # files inspected, commands run
+      notes: ""             # how artifact truth was established
+    docs_reconcile:
+      completed: false
+      evidence: []          # documentation files opened
+      notes: ""             # how docs changed or failed to change understanding
+
+# ------------------------------------------------------------
+# TIER 1: ARTIFACT-FIRST SKELETON (REQUIRED)
+# Populate this tier strictly from executable artifacts:
+# code, configs, tests, data, manifests, and observed in-repo outputs.
+# Documentation must NOT be used to populate this tier.
+#
+# A top-down presence pass (≥2 directory levels) may be used ONLY to
+# ensure coverage; it must not be used as a factual source.
+# ------------------------------------------------------------
+
+skeleton:
+  system_kind: TBD          # batch|event|interactive|mixed|unknown
+  runtime: TBD              # primary runtime/language if evident (optional)
+
+  components:
+    - name: TBD
+      role: TBD
+      entrypoints: []       # externally invocable code paths
+      reads: []             # files/db/api/env consumed
+      writes: []            # files/db/network outputs
+      state: []             # persistent stores used
+      ev: []                # path:line for code, path for files, inferred:<basis>
+
+  entrypoints:
+    primary: []             # main externally-invocable entrypoints
+    secondary: []           # auxiliary commands/scripts
+    scheduled: []           # cron/ci/daemon; if none, []
+
+  io:
+    inputs:
+      - name: TBD
+        kind: TBD           # api|file|db|env|user|queue|prompt|other
+        format: TBD
+        source: TBD
+        ev: []
+    outputs:
+      - name: TBD
+        kind: TBD           # file|db|network|log|artifact|ui|other
+        format: TBD
+        location: TBD
+        mutability: TBD     # append_only|overwrite|mixed|unknown
+        ev: []
+
+  state:
+    stores: []              # explicit [] if stateless; list all persistent state
+
+  artifacts:
+    directories: []         # runs/, sessions/, logs/, artifacts/
+    manifests: []           # files that index/catalog other artifacts
+    ev: []
+
+  constraints:
+    enforced: []            # code-level guards, validators, hard checks
+    conventions: []         # relied-upon but unenforced rules
+    unknown: []             # enforcement not found or ambiguous
+    ev: []
+
+  tests_and_validation:
+    tests_present: TBD      # true|false|unknown
+    validators: []          # explicit validators/checkers
+    ev: []
+
+  gaps:
+    missing_or_stubbed: []  # referenced but not implemented
+    ambiguous: []           # unclear semantics after inspection
+    ev: []
+
+# ============================================================
+# TIER 2: DOCUMENTATION INVENTORY (REQUIRED)
+# Enumerate documentation after the skeleton is complete.
+# This tier records claims only; it does not assert correctness.
+# ============================================================
+
+docs:
+  important_docs:
+    - path: TBD
+      type: TBD             # readme|spec|adr|rfc|notes|runbook|other
+      claims: []            # major claims made by this doc
+
+  known_specs:
+    - path: TBD
+      governs: TBD          # schema|pipeline|api|safety|process|other
+
+  missing_docs:
+    - TBD
+
+# ============================================================
+# TIER 3: RECONCILIATION + NARRATIVE (DOC-AWARE)
+# Reconcile documentation claims against artifact truth.
+# Artifacts remain authoritative unless explicitly overridden.
+# ============================================================
+
+reconcile:
+  contradictions:
+    - doc_claim: TBD
+      artifact_finding: TBD
+      resolution: TBD       # accept_artifact|accept_doc|mixed|unknown
+      notes: TBD
+
+  updates_after_docs: []
+
+narrative:
+  purpose_and_scope:
+    statement: TBD
+    non_goals: []
+    success_criteria: []
+
+  architecture_notes: []
+
+  decisions_and_rationale: []
+
+  operating_model: []
+
+  confidence:
+    high: []
+    low: []
+
+___

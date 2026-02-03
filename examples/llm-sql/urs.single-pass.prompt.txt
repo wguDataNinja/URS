@@ -1,0 +1,11 @@
+Generate a Universal Repository Specification (URS) for the following scope:
+
+Repository subtree:
+llm-sql
+
+Follow the structure, ordering, and method defined in:
+URS-template.md
+
+Output a single completed URS conforming exactly to the template.
+
+Begin with repository inspection.
