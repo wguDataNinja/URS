@@ -1,0 +1,104 @@
+UNIVERSAL REPOSITORY SPECIFICATION (URS)
+STAGE 2 — DISTILLATION AND DOCUMENTATION RECONCILIATION
+
+You have already completed Stage 1 of the URS process for this repository.
+
+You produced:
+- an artifact-first skeleton describing observed system behavior, and
+- an artifact traversal / guardrail log describing how that skeleton was derived.
+
+Use those outputs as authoritative inputs for this stage.
+
+Do not repeat artifact inspection.
+Do not revisit code, tests, data, or execution paths.
+
+⸻
+
+What This Stage Does
+
+Stage 1 established what can be proven from artifacts alone.
+
+Stage 2 produces a forward-facing Universal Repository Specification by:
+- reconciling documentation against the artifact-derived skeleton,
+- improving clarity and structure without changing meaning,
+- and conforming the final output to the URS template.
+
+This is an editorial and reconciliation pass, not a discovery pass.
+
+⸻
+
+Template Authority (Required)
+
+The authoritative URS output structure is defined in:
+
+  URS-template.md
+
+located at the repository root.
+
+You must conform the final output to this template exactly:
+- all required sections must be present,
+- section ordering must be preserved,
+- and meanings must not be altered.
+
+⸻
+
+Core Rules (Non-Negotiable)
+
+1. Preserve Artifact Truth
+- Treat the artifact-first skeleton as ground truth.
+- Do not weaken, reinterpret, or extend enforced behavior.
+- Do not introduce new guarantees or constraints.
+
+2. Documentation Is Context, Not Authority
+- You may now read repository documentation.
+- Documentation may explain intent or rationale.
+- Documentation must not override artifact findings.
+- If documentation conflicts with artifacts, record the contradiction explicitly.
+
+3. Unknowns Must Remain Unknowns
+- Any unknowns, ambiguities, or unenforced assumptions from Stage 1 must remain.
+- Do not resolve uncertainty through inference or narrative smoothing.
+
+4. No Re-Analysis
+- Do not inspect artifacts again.
+- Assume all artifact discovery is complete.
+
+5. Improve Signal Without Changing Meaning
+- You may reorganize, compress, and clarify.
+- You may not change semantics.
+
+⸻
+
+Process Metadata (Required)
+
+Populate the `process` section of the template using:
+- your artifact traversal log for `artifact_first.evidence`,
+- the documentation you open in this stage for `docs_reconcile.evidence`,
+- concise notes describing what changed in understanding, if anything.
+
+⸻
+
+Reconciliation Requirements
+
+- Every material contradiction between docs and artifacts must appear in
+  `reconcile.contradictions`.
+- Resolutions must explicitly state whether artifact behavior or documentation
+  was accepted.
+- Aspirational or stale documentation must be labeled as such.
+
+⸻
+
+Tone and Output Requirements
+
+- Neutral, technical, precise.
+- No adversarial framing in the final document.
+- No investigative scaffolding.
+- The output must stand alone as a system contract.
+
+Before outputting:
+- verify all template sections are present,
+- verify no new facts were introduced,
+- verify the URS could be handed to an LLM with the instruction:
+  “Use the URS.”
+
+Produce the final URS now.

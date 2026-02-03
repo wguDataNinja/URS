@@ -1,0 +1,13 @@
+Please output your Stage 2 distillation log.
+
+Requirements:
+- Output plain text only.
+- Include:
+  - docs opened in Stage 2 (paths)
+  - any edits/transformations you applied to the Stage 1 skeleton to conform to URS-template.md
+  - any contradictions you carried forward and how you decided wording
+  - a short “self-check” list (template completeness, no new facts, unknowns preserved)
+
+Do not re-inspect artifacts.
+Do not re-run commands.
+Do not output the URS itself.

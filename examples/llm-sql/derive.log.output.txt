@@ -1,0 +1,36 @@
+Artifact traversal
+
+I inspected code first, in this order: cli.py, storage.py, query_session.py, session_store.py, llm_query_translate.py, llm_query_contract.py, query_translate_stub.py, sql_selector.py, query_contract.py, template_catalog.py, time_window.py, __init__.py.
+I inspected tests second, in this order: test_query_session.py, test_session_store.py, test_query_smoke.py, test_llm_query_translate_unit.py, test_query_llm_gold.py, test_time_window.py, test_template_catalog.py, test_cli_args.py, test_posts_search.py.
+I inspected data artifacts third: wgu_reddit.sqlite (and -wal/-shm presence only).
+I inspected config/deps next: requirements.txt.
+I inspected documentation last: URS.md, DESIGN_DECISIONS.md, PHASE_PLAN.md, CONTRACT.md, RUN.md, demo_run.md.
+I intentionally skipped repo-level README because it was not present; I attempted to open README.md and README.md and confirmed both missing.
+I did not inspect external repos or non-llm-sql directories beyond locating files; scope was limited to llm-sql/llm-db.
+Evidence selection
+
+I labeled behavior as “enforced” only when there was explicit code-level validation/guards (e.g., execute_readonly checks, QueryPlan.validate, QuerySpec.validate, limit enforcement).
+I labeled behavior as “documented intent” when it appeared only in docs without direct code support (e.g., Datasette, ThreadBundle references).
+When code and docs conflicted, I recorded the code as authoritative and marked the doc as stale/contradictory.
+I treated tests as behavioral evidence only for the behaviors they directly assert (e.g., normalization fallback, time window parsing), not as general guarantees.
+I treated demo outputs as observations, not enforcement.
+Unknowns and absences
+
+I marked items unknown when I could not find code, tests, or config indicating that behavior (e.g., schema enforcement beyond referenced columns).
+I noted absences explicitly when code did not show a feature claimed in docs (e.g., Datasette, ThreadBundle).
+I suspected but did not record guarantees about dataset schema or row counts because they were only in docs/demo output.
+Reconciliation process
+
+I matched doc claims to artifacts by searching for explicit implementations or tests that supported the claim.
+I identified stale or contradictory docs by directly comparing doc statements against observed code behavior (e.g., session payload fields, presence of session writer/store).
+When resolving conflicts, I always prioritized executable code and tests over docs, and recorded the contradiction rather than selecting the doc claim.
+Guardrails followed
+
+I avoided inventing guarantees by requiring a concrete code path or test assertion before calling something enforced.
+I avoided extrapolating future behavior by not using design docs as evidence of current functionality.
+I kept scope limited to llm-sql/llm-db; I did not use artifacts outside that subtree to infer behavior.
+Self-checks
+
+I performed a file enumeration (rg --files) to ensure I had covered all code files in llm-sql/llm-db/llm_db.
+I cross-checked tests for behavior coverage and used them only where they directly assert outcomes.
+I revisited URS.md after code inspection to reconcile claims and capture contradictions.
